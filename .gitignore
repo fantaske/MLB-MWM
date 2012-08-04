@@ -1,0 +1,11 @@
+###################
+# Compiled source #
+###################
+bin
+gen
+assets/bugsense.txt
+
+##############
+# Swap files #
+##############
+*.swp

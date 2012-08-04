@@ -1,0 +1,43 @@
+<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><title>About</title></head>
+<body>
+<h1>MLB for MWM</h1>
+<p>The MLBScoreWidget displays game data information for a particular Major League Baseball team.
+<p>The user picks a team from by selecting the button displaying a MLB Team name. 
+The teams are listed alphabetically with no organization for league or division.
+<p> Then enter the time between score updates, in minutes, in the Edit box. The default
+is two minutes.
+<p>A typical
+half inning takes ten minutes so a two minute interval should cover every out 
+without pulling data from the server too often. Until the game starts, the score 
+server is not polled.
+<p> Then select the "Start Widget" button to have MetaWatch Manager start displaying
+the widget on your watch.
+<p>The widget is 48 pixels wide and 32 pixels high which is half a row on a digital 
+watch. On a day when the team is not playing, the team name is printed at the
+top of the widget and NONE, in a large font, is printed below the name. On
+a day the team is playing, but before the game starts, three letter names for 
+the teams are printed on the first line with the visiting team on the left. 
+Below the team names, the start time for the game is printed using the time zone where the
+watch is, not the game. After the
+game starts, the team scores are printed below the names. To the right of the
+score and centered vertically, the inning appears. During the top of the inning,
+the number of outs is displayed above the inning. Outs are below the inning in the bottom
+half. When the game finishes, the inning is replaced with F.
+<p>The final score is displayed until some time past 10AM of the next day when the
+score is replaced with either the start time for that day or NONE. 
+<p>The three letter designation for a team is location based rather than team name based.
+For example, the Atlanta Braves uses ATL. The Los Angeles Dodgers uses LAD. 
+<p>The score data is pulled from:
+http://gd2.mlb.com/components/game/mlb/year_yyyy/month_mm/day_dd/scoreboard.xml
+Where year, yyyy, month, mm, and day, dd, are extracted from the current date.
+This file is generally less than 10K in size. For a three hour game, and a two minute
+interval between updates, the file 
+will be fetched 90 times for a total of nearly 1MB. During the season, a team plays 
+fewer than 30 games per month. 30MB would be more than 10% of a 200MB/month 
+data plan.
+<p>The content of the files on the gd2.mlb.com sever are protected with:
+<p>
+Copyright 2012 MLB Advanced Media, L.P. Use of any content on this page 
+acknowledges agreement to the terms posted here 
+http://gdx.mlb.com/components/copyright.txt    
+</body>

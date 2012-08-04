@@ -1,0 +1,36 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.metawatch.manager.mlb"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="15" />
+    
+    <uses-permission android:name="android.permission.INTERNET"/>
+	<uses-permission android:name="android.permission.WAKE_LOCK"/>
+    
+    <application
+        android:icon="@drawable/boardmeta"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".MLBActivity"
+            android:label="@string/title_activity_mlb" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <receiver android:name="org.metawatch.manager.mlb.MLBScoreWidget" >
+            <intent-filter >
+                <action android:name="org.metawatch.manager.REFRESH_WIDGET_REQUEST" />
+            </intent-filter>
+        </receiver>
+        
+		<receiver android:name="org.metawatch.manager.mlb.MLBReceiver"></receiver>
+    </application>
+
+</manifest>

@@ -1,0 +1,44 @@
+<resources>
+
+    <string name="app_name">MLB Score for MetaWatch</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_mlb">MetaWatch MLB Score</string>
+    <string name="directions">Select one team from all Major League Baseball teams</string>
+	<string name="timing">Enter time, in minutes, between score updates</string>
+	<string name="buttonText">Start Widget</string>	
+	<string name="about_mlb_score">About MLB Score</string>
+	<string name="about_mlb">About</string>
+	<string-array name="all_mlb_teams">
+        <item >Angels</item>
+        <item >Astros</item>
+        <item >Athletics</item>   
+        <item >Braves</item>
+        <item >Blue Jays</item> 
+        <item >Brewers</item>
+        <item >Cubs</item> 
+        <item >Cardinals</item>
+        <item >D-backs</item>
+        <item >Dodgers</item> 
+        <item >Giants</item>         
+        <item >Indians</item>
+        <item >Mets</item>
+        <item >Mariners</item>
+        <item >Marlins</item>
+        <item >Nationals</item>
+        <item >Orioles</item>
+        <item >Padres</item>
+        <item >Phillies</item>
+        <item >Pirates</item>
+        <item >Rangers</item>
+        <item >Rays</item>
+        <item >Reds</item>
+        <item >Red Sox</item>
+        <item >Rockies</item>
+        <item >Royals</item>
+        <item >Tigers</item>
+        <item >Twins</item>
+        <item >White Sox</item>       
+        <item >Yankees</item>
+	</string-array>
+
+</resources>
