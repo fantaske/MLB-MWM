@@ -28,6 +28,7 @@
 
 package org.metawatch.manager.mlb;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -36,6 +37,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import android.util.Log;
@@ -63,6 +65,7 @@ public class MLBGameScore {
 			year = 2012;
 			month = 5;
 			day = 1;
+			Log.e(MLBActivity.TAG,"formatUrlDir" + e.toString());
 		}
 		return String.format("http://gd2.mlb.com/components/game/mlb/year_%1$4d/month_%2$02d/day_%3$02d",
 				year, month, day);
@@ -82,14 +85,21 @@ public class MLBGameScore {
 			src.setEncoding("ISO-8859-1");
 			xr.parse(src);
 			this.game = mlbsh.getGameData();
-			this.game.setMyTeamName(this.myTeam);
+		} catch (SAXException e){
+			Log.e(MLBActivity.TAG,"updateScore SAX" + e.toString());
+		} catch (IOException e){
+			Log.e(MLBActivity.TAG,"updateScore IO" + e.toString());
 		} catch (Exception e){
-			Log.e(MLBActivity.TAG,e.toString());
+			Log.e(MLBActivity.TAG,"updateScore" + e.toString());
 		}
 	}
 
 	public GameData getScore(){
 		updateScore();
+		while(this.game == null){
+			Log.e(MLBActivity.TAG,"updateScore null game try again");
+			updateScore();
+		}
 		return this.game;
 	}
 	
@@ -100,13 +110,11 @@ public class MLBGameScore {
 	public MLBGameScore(String teamName, GregorianCalendar date){
 		this.myTeam = teamName;
 		this.gameDate = date;
-//		updateScore();
 	}
 
 	public MLBGameScore(String teamName){
 		this.myTeam = teamName;
 		this.gameDate = (GregorianCalendar) Calendar.getInstance();
-//		updateScore();
 	}
 
 }

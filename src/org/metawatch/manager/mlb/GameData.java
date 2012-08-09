@@ -52,6 +52,19 @@ public class GameData {
 	private GregorianCalendar eastStartTime = (GregorianCalendar) Calendar.getInstance();
 	private GregorianCalendar localStartTime = (GregorianCalendar) Calendar.getInstance();
 
+	public void resetValues(){
+//		myTeamName = "Favorite";
+		awayName = "UNK";
+		homeName = "UNK";
+		awayRuns = 0;
+		homeRuns = 0;
+		inning = 0;
+		outs = 0;
+		top = true;
+		eastStartTimeString = "7:05 PM";
+		state = MLBGameScore.GameState.NONE;
+	}
+	
 	public GregorianCalendar getEastStartTime() {
 		return this.eastStartTime;
 	}
@@ -64,8 +77,8 @@ public class GameData {
 		return this.eastStartTimeString;
 	}
 
-	public void setEastStartString(String eastStartTimeString) {
-		this.eastStartTimeString = eastStartTimeString;
+	public void setEastStartString(String newEastStartTimeString) {
+		this.eastStartTimeString = newEastStartTimeString;
 		convertEastStartTime();
 		convertLocalStartTime();
 	}
@@ -82,56 +95,56 @@ public class GameData {
 		return this.homeName;
 	}
 
-	public void setHomeName(String homeName) {
-		this.homeName = homeName;
+	public void setHomeName(String newHomeName) {
+		this.homeName = newHomeName;
 	}
 
 	public Integer getAwayRuns() {
 		return this.awayRuns;
 	}
 
-	public void setAwayRuns(Integer awayRuns) {
-		this.awayRuns = awayRuns;
+	public void setAwayRuns(Integer newAwayRuns) {
+		this.awayRuns = newAwayRuns;
 	}
 
 	public Integer getHomeRuns() {
 		return this.homeRuns;
 	}
 
-	public void setHomeRuns(Integer homeRuns) {
-		this.homeRuns = homeRuns;
+	public void setHomeRuns(Integer newHomeRuns) {
+		this.homeRuns = newHomeRuns;
 	}
 
 	public Integer getInning() {
 		return this.inning;
 	}
 
-	public void setInning(Integer inning) {
-		this.inning = inning;
+	public void setInning(Integer newInning) {
+		this.inning = newInning;
 	}
 
 	public Integer getOuts() {
 		return this.outs;
 	}
 
-	public void setOuts(Integer outs) {
-		this.outs = outs;
+	public void setOuts(Integer newOuts) {
+		this.outs = newOuts;
 	}
 
 	public Boolean getTop() {
 		return this.top;
 	}
 
-	public void setTop(Boolean top) {
-		this.top = top;
+	public void setTop(Boolean newTop) {
+		this.top = newTop;
 	}
 
 	public MLBGameScore.GameState getState() {
 		return this.state;
 	}
 
-	public void setState(MLBGameScore.GameState state) {
-		this.state = state;
+	public void setState(MLBGameScore.GameState newState) {
+		this.state = newState;
 	}
 
 	// Convert string of the form "7:05PM" into a Calendar object
@@ -141,12 +154,15 @@ public class GameData {
 			Integer colon = this.eastStartTimeString.indexOf(':');
 			Integer hour = Integer.parseInt(this.eastStartTimeString.substring(0,	colon));
 			Integer minute = Integer.parseInt(this.eastStartTimeString.substring(colon + 1, colon + 3));
-			eastStartTime.set(Calendar.HOUR_OF_DAY, hour + (pm ? 12 : 0));
-			eastStartTime.set(Calendar.MINUTE, minute);
-			eastStartTime.set(Calendar.SECOND, 0);
-			eastStartTime.set(Calendar.MILLISECOND, 0);			
+			this.eastStartTime.set(Calendar.HOUR_OF_DAY, hour + (pm ? 12 : 0));
+			this.eastStartTime.set(Calendar.MINUTE, minute);
+			this.eastStartTime.set(Calendar.SECOND, 0);
+			this.eastStartTime.set(Calendar.MILLISECOND, 0);			
+			Log.d(MLBActivity.TAG,"MLBGameData: east time");
+			Log.v(MLBActivity.TAG,"MLBGameData: east time:"+eastStartTime.toString());
 		} catch (Exception e) {
-			Log.e("MLBGameData", e.toString());
+			this.eastStartTime = (GregorianCalendar) Calendar.getInstance();
+			Log.e(MLBActivity.TAG, "convertEastStartTime exception: "+ e.toString());
 		}
 		return;
 	}
@@ -154,20 +170,20 @@ public class GameData {
 	// Convert the eastern time zone time into a local time.
 	private void convertLocalStartTime() {
 		try {
-			localStartTime = (GregorianCalendar)this.eastStartTime.clone();
+			this.localStartTime = (GregorianCalendar)this.eastStartTime.clone();
 			TimeZone localtz = TimeZone.getDefault();
 			Integer localOffset = localtz.getRawOffset();
 			TimeZone etz = TimeZone.getTimeZone("EST5EDT");
 			Integer eOffset = etz.getRawOffset();
 			Integer diffOffset = localOffset - eOffset; // units of milliseconds
 			Integer hourOffset = diffOffset / (1000 * 60 * 60);
-			localStartTime.add(Calendar.HOUR_OF_DAY, hourOffset);
-//			if (Preferences.logging) Log.d(MLBActivity.TAG,
-//					"MLBGameData: time:"+adjustTime.toString());
+			this.localStartTime.add(Calendar.HOUR_OF_DAY, hourOffset);
+			Log.d(MLBActivity.TAG,"MLBGameData: local time");
+			Log.v(MLBActivity.TAG,"MLBGameData: local time:"+localStartTime.toString());
 			return;
 		} catch (Exception e) {
-//			Log.e(MLBActivity.TAG, "getLocalStartTime exception: "+ e.toString());
-			localStartTime = (GregorianCalendar) Calendar.getInstance();
+			this.localStartTime = (GregorianCalendar) Calendar.getInstance();
+			Log.e(MLBActivity.TAG, "convertLocalStartTime exception: "+ e.toString());
 		}
 	}
 
@@ -175,8 +191,8 @@ public class GameData {
 		return myTeamName;
 	}
 
-	public void setMyTeamName(String myTeamName) {
-		this.myTeamName = myTeamName;
+	public void setMyTeamName(String newTeamName) {
+		this.myTeamName = newTeamName;
 	}
 
 }

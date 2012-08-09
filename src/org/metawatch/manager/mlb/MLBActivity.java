@@ -66,7 +66,7 @@ public class MLBActivity extends Activity {
 	private static AlarmManager alarmManager;
 	private static Intent intent;
 	private static PendingIntent sender;
-	private static MLBGameScore.GameState oldState = MLBGameScore.GameState.NONE;
+//	private static MLBGameScore.GameState oldState = MLBGameScore.GameState.NONE;
 	static Context context;
 		
     @Override
@@ -128,7 +128,7 @@ public class MLBActivity extends Activity {
 				editor.putInt("timing", updateTimeMinutes);
 								
 				editor.commit();
-
+				// Use a time in the past to fire alarm immediately
 				startMLBTicker(new GregorianCalendar(2000,1,1), MLBGameScore.GameState.PREGAME);		
 			};
         });
@@ -158,7 +158,6 @@ public class MLBActivity extends Activity {
 	}
 	
 	private void showAbout(){
-    	
     	Resources res = getResources();
     	AssetManager assetmgr = res.getAssets();
     	StringBuilder html = new StringBuilder(1000);
@@ -179,40 +178,44 @@ public class MLBActivity extends Activity {
 			public void onClick(DialogInterface dialog, int which) {
 				dialog.dismiss();
 			}
-		}).show();        
-		
-		
+		}).show();		
 	}
 	
 	static void startMLBTicker(GregorianCalendar startTime, MLBGameScore.GameState newState) {
-		// During the game, check the score every two minutes
+		long startMilli = startTime.getTimeInMillis();;
+		long nowMilli = Calendar.getInstance().getTimeInMillis();
+		// During the game, check the score at a regular interval
 		if (newState == MLBGameScore.GameState.PLAYING) {
-			alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, 0,
-					MLBActivity.updateTimeMinutes * 60 * 1000, sender);
-			return;
+//			startMilli = Calendar.getInstance().getTimeInMillis() + MLBActivity.updateTimeMinutes * 60 * 1000;
+			startMilli = nowMilli + MLBActivity.updateTimeMinutes * 60 * 1000;
+//			alarmManager.set(AlarmManager.RTC_WAKEUP,startMilli, sender);
+//			return;
 		}
 
-//		if (newState == MLBGameScore.GameState.PREGAME) {
-//	Don't adjust time
-//		}
+		if (newState == MLBGameScore.GameState.PREGAME) {
+			if(nowMilli > startMilli){
+				// Start time has passed, but game hasn't started
+				startMilli = nowMilli + 30 * 1000;	// try again in 30 seconds
+			}	
+			//	Don't adjust time if now is before start time
+		}
 
 		// If no game today, check again tomorrow at 1AM
 		if (newState == MLBGameScore.GameState.NONE ){
 			startTime.add(Calendar.DATE, 1);
+			startTime.set(Calendar.MINUTE,0);
 			startTime.set(Calendar.HOUR_OF_DAY, 1);
+			startMilli = startTime.getTimeInMillis();
 		}
 		
 		// When today's game is over, check again tomorrow at 10AM
 		if (newState == MLBGameScore.GameState.FINAL ){
 			startTime.add(Calendar.DATE, 1);
+			startTime.set(Calendar.MINUTE,0);
 			startTime.set(Calendar.HOUR_OF_DAY, 10);
-    		Intent i = createVibrateIntent();
-    		context.sendBroadcast(i);
-//			if (Preferences.logging) Log.d(MLBActivity.TAG,
-//					"final wakeup");
+			startMilli = startTime.getTimeInMillis();
 		}
-		long stMilli = startTime.getTimeInMillis();
-		alarmManager.set(AlarmManager.RTC_WAKEUP,stMilli, sender);
+		alarmManager.set(AlarmManager.RTC_WAKEUP,startMilli, sender);
 				
 	}
    
@@ -220,7 +223,8 @@ public class MLBActivity extends Activity {
 		alarmManager.cancel(sender);
 	}
 	
-	public static void updateMLBScore(final Context context, final Intent intent){
+	public static void updateMLBScore(){
+//		public static void updateMLBScore(final Context context, final Intent intent){
 		Thread thread = new Thread("MLBScoreUpdater") {
 			@Override
 			public void run() {
@@ -228,45 +232,50 @@ public class MLBActivity extends Activity {
 				PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "mlb");
 				wl.acquire();
 
-				if (intent.hasExtra("action_mlbupdate")) {
-					Log.d(MLBActivity.TAG,"updateMLBScore");
+//				if (intent.hasExtra("action_mlbupdate") || 
+//					intent.getAction().equals("org.metawatch.manager.REFRESH_WIDGET_REQUEST")) {
+					Log.i(MLBActivity.TAG,"updateMLBScore");
 
-					MLBGameScore myScore = new MLBGameScore(MLBActivity.teamName);
-					GameData score = myScore.getScore();
-					switch(score.getState())
-					{
-					case NONE:
-					case PREGAME:
-					case FINAL:
-						startMLBTicker(score.getLocalStartTime(), score.getState());
-						oldState = score.getState();
-						break;
-					case PLAYING:
-						if(oldState != MLBGameScore.GameState.PLAYING){
-							startMLBTicker(score.getEastStartTime(), score.getState());
-							oldState = score.getState();
+					try{
+						MLBGameScore myScore = new MLBGameScore(MLBActivity.teamName);
+						GameData latestScore = myScore.getScore();
+						startMLBTicker(latestScore.getLocalStartTime(), latestScore.getState());
+						switch(latestScore.getState())
+						{
+						case NONE:
+						case PREGAME:
+						case PLAYING:
+							break;
+						case FINAL:
+				    		sendVibrateIntent();
+				    		Log.i(MLBActivity.TAG,"final wakeup");
+							break;
 						}
-						break;
+						MLBScoreWidget.update(context,latestScore);
+					} catch (NullPointerException e) {
+						Log.e(MLBActivity.TAG, "updateMLSBScore NullPoinrwe" + e.toString());
+						startMLBTicker((GregorianCalendar)Calendar.getInstance(), MLBGameScore.GameState.PLAYING);
+					} catch (Exception e) {
+						Log.e(MLBActivity.TAG, "updateMLSBScore" + e.toString());
+						startMLBTicker((GregorianCalendar)Calendar.getInstance(), MLBGameScore.GameState.PLAYING);
 					}
-					MLBScoreWidget.setScoreData(score);
-					MLBScoreWidget.update(context,score);
-
-				}
+//				}
 				wl.release();
 			}
 		};
 		thread.start();
 	};
 
-	private static Intent createVibrateIntent() {
+	// Tell MetaWatch Manager to make the watch vibrate.
+	private static void sendVibrateIntent() {
 		Intent intent = new Intent("org.metawatch.manager.VIBRATE");
 		Bundle b = new Bundle();
 		b.putInt("vibrate_on", 500);
 		b.putInt("vibrate_off", 500);
 		b.putInt("vibrate_cycles", 3);
 		intent.putExtras(b);
-
-		return intent;
+		context.sendBroadcast(intent);
+		return;
 	}
 	
 }

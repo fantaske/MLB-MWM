@@ -28,11 +28,11 @@
 
 package org.metawatch.manager.mlb;
 
-//import java.util.Hashtable;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import android.util.Log;
 
 
 public class MLBScoreHandler extends DefaultHandler {
@@ -44,24 +44,8 @@ public class MLBScoreHandler extends DefaultHandler {
 	private String idAttribute;
 	private String statusAttribute;
 	private String startAttribute;
-	private String myTeam;
 	private Integer runs;
 
-	// The xml file uses abbreviations I don't always like and they're lower case.
-//	private static String[][] nameConvert = {
-//		{"ana","ari","atl","bal","bos","cha","chn","cin","cle","col","det","hou","kca","lan","mia",
-//		 "mil","min","nya","nyn","phi","pit","oak","sea","sdn","sfn","sln","tba","tex","tor","was"
-//		},
-//		{"LAA","ARI","ATL","BAL","BOS","CWS","CHC","CIN","CLE","COL","DET","HOU"," KC","LAD","MIA",
-//		 "MIL","MIN","NYY","NYM","PHI","PIT","OAK","SEA"," SD"," SF","STL"," TB","TEX","TOR","WAS"
-//			}
-//	};
-//	private Hashtable<String,String> hashNames = new Hashtable<String, String>(30);
-//	
-//	private void parseId(){
-//		this.game.setAwayName(hashNames.get(this.idAttribute.substring(11,14)));
-//		this.game.setHomeName(hashNames.get(this.idAttribute.substring(18,21)));	
-//	}
 	
 	private final static String smallAbbrev = "ana,ari,atl,bal,bos,cha,chn,cin,cle,col,det,hou,kca,lan,mia,mil,min,nya,nyn,phi,pit,oak,sea,sdn,sfn,sln,tba,tex,tor,was";
 	private final static String capAbbrev =   "LAA,ARI,ATL,BAL,BOS,CWS,CHC,CIN,CLE,COL,DET,HOU, KC,LAD,MIA,MIL,MIN,NYY,NYM,PHI,PIT,OAK,SEA, SD, SF,STL, TB,TEX,TOR,WAS";
@@ -75,10 +59,7 @@ public class MLBScoreHandler extends DefaultHandler {
 	}
 	
 	public MLBScoreHandler(String name){
-		this.myTeam = name;
-//		for(int i = 0; i < nameConvert[0].length; i++){
-//			hashNames.put(nameConvert[0][i], nameConvert[1][i]);
-//		}
+		this.game.setMyTeamName(name);
 	}
 	
 	public GameData getGameData() {
@@ -87,16 +68,19 @@ public class MLBScoreHandler extends DefaultHandler {
 	
 	@Override
 	public void startDocument() throws SAXException {
-		this.game = new GameData();
+		this.game.resetValues();
 		this.in_game = false;
 		this.found_team = false;
+		Log.d(MLBActivity.TAG,"startDocument");
 	}
 
 	@Override
 	public void endDocument() throws SAXException {
 		if(!this.found_team){
+			// State is already set to NONE, but this is a reminder.
 			this.game.setState(MLBGameScore.GameState.NONE);
 		}
+		Log.d(MLBActivity.TAG,"endDocument");
 	}
 
 	@Override
@@ -120,7 +104,8 @@ public class MLBScoreHandler extends DefaultHandler {
 			// this time is always for the eastern time zone
 			this.startAttribute = atts.getValue("start_time");
 		} else if(qName.equals("team")){
-			if(myTeam.equalsIgnoreCase(atts.getValue("name"))) found_team=true;
+			if(this.game.getMyTeamName().equalsIgnoreCase(atts.getValue("name"))) found_team=true;
+//			if(myTeam.equalsIgnoreCase(atts.getValue("name"))) found_team=true;
 		} else if(qName.equals("gameteam")){
 			// assign runs to proper team when end of element is reached
 			this.runs = Integer.parseInt(atts.getValue("R"));
@@ -131,13 +116,17 @@ public class MLBScoreHandler extends DefaultHandler {
 	}
 
 	@Override
-	public void endElement(String namespaceURI, String localName, String qName)
-			throws SAXException {
+	public void endElement(String namespaceURI, String localName, String qName)	throws SAXException {
+		// If we already found our team and its game has been completely processed
+		// then just skip the rest of the elements.
+		if(found_team  && !in_game)return;
 		if(qName.endsWith("_game")){
 			in_game = false;
 			if(this.found_team){
 				this.game.setEastStartString(this.startAttribute);
+				// Convert lower case team abbreviations to 'better' upper case ones
 				this.parseId();
+				// Map all the status values MLB uses to the four used by this program
 				if(this.statusAttribute.equals("IN_PROGRESS") ||
 				   this.statusAttribute.equals("DELAYED"))
 					this.game.setState(MLBGameScore.GameState.PLAYING);
@@ -154,8 +143,8 @@ public class MLBScoreHandler extends DefaultHandler {
 				this.game.setAwayRuns(runs);
 			} else {
 				this.game.setHomeRuns(runs);				
+				visitor = true;
 			}
-			visitor = true;
 		}
 	}
 }

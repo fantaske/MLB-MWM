@@ -54,8 +54,8 @@ public class MLBScoreWidget extends BroadcastReceiver {
 	final static String desc_0 = "MLB Score (48x32)";
 	static Typeface typeface = null;
 	static Typeface typefaceMed = null;
-	static TextPaint paintSmall;
-	static TextPaint paintMed;
+	static TextPaint paintSmall = null;
+	static TextPaint paintMed = null;
 	
     private static GameData score;
 	
@@ -71,9 +71,10 @@ public class MLBScoreWidget extends BroadcastReceiver {
 	private static final float yBottom = 27.0f;
 	
 	@Override
+	// About every 30 minutes, MWM wants the widge updated.
 	public void onReceive(Context context, Intent intent) {
 		String action = intent.getAction();
-		Log.d(MLBActivity.TAG, "onReceive() " + action);
+		Log.i(MLBActivity.TAG, "onReceive() " + action);
 		
 		if (action !=null && action.equals("org.metawatch.manager.REFRESH_WIDGET_REQUEST")) {
 
@@ -95,65 +96,66 @@ public class MLBScoreWidget extends BroadcastReceiver {
 			boolean active = (widgets_desired != null) && (widgets_desired.contains(id_0));
 			
 			if (getPreviews || active) {
-				genWidget(context, id_0, score);
+				if(score == null){
+					Log.i(MLBActivity.TAG, "null score in onReceive");
+//					MLBActivity.updateMLBScore(context, intent);
+					MLBActivity.updateMLBScore();
+				} else {
+					genWidget(context, id_0, score);
+				}
 			}
 		}
 		
 	}
 	
-	public void shutdown() {
-		paintSmall = null;
-		paintMed = null;
-	}
-
-    public static void setScoreData(GameData newScore){
+    public synchronized static void setScoreData(GameData newScore){
     	score = newScore;
     }
  
-    public void refresh(ArrayList<CharSequence> widgetIds) {
-	}
-
-   private static void drawNames(Canvas canvas){
-        canvas.drawText(MLBScoreWidget.score.getAwayName(), xAwayName, yNames, paintSmall);
-        canvas.drawText(MLBScoreWidget.score.getHomeName(), xHomeName,yNames, paintSmall);    
+   private static void drawNames(Canvas canvas, GameData drawScore){
+        canvas.drawText(drawScore.getAwayName(), xAwayName, yNames, paintSmall);
+        canvas.drawText(drawScore.getHomeName(), xHomeName, yNames, paintSmall);    
     }
 
-   private static void drawScores(Canvas canvas){
-        canvas.drawText(MLBScoreWidget.score.getAwayRuns().toString(), xAwayScore, yScores, paintMed);
-        canvas.drawText(MLBScoreWidget.score.getHomeRuns().toString(), xHomeScore, yScores, paintMed);    	
+   private static void drawScores(Canvas canvas, GameData drawScore){
+        canvas.drawText(drawScore.getAwayRuns().toString(), xAwayScore, yScores, paintMed);
+        canvas.drawText(drawScore.getHomeRuns().toString(), xHomeScore, yScores, paintMed);
+        Log.v(MLBActivity.TAG,drawScore.getAwayName() + " " + drawScore.getAwayRuns().toString() + " " +  
+        		              drawScore.getAwayRuns().toString()  + " " + drawScore.getHomeRuns().toString() +
+        		              drawScore.getOuts().toString() + "inning");
    }
 
-	public  static void update(Context context, GameData updateScore) {
+	public synchronized static void update(Context context, GameData updateScore) {
 		Log.d(MLBActivity.TAG, "Updating widget");
-		
+		score = updateScore;
 		genWidget(context, id_0, updateScore);
 	}
    
-	private  static void genWidget(Context context, String id, GameData updateScore) {
-//		InternalWidget.WidgetData widget = new InternalWidget.WidgetData();
-		
+	private synchronized static void genWidget(Context context, String id, GameData updateScore) {
 		Log.d(MLBActivity.TAG, "genWidget() start - "+id);
     	AssetManager assetmgr = context.getAssets();
 		
-		if (typeface==null) {
+		if (typeface == null) {
 			typeface = Typeface.createFromAsset(assetmgr, "metawatch_8pt_5pxl_CAPS.ttf");
 		}
-		if (typefaceMed==null) {
+		if (typefaceMed == null) {
 			typefaceMed = Typeface.createFromAsset(assetmgr, "metawatch_16pt_11pxl.ttf");
 		}
 		
-		paintSmall = new TextPaint();
-		paintSmall.setColor(Color.BLACK);
-		paintSmall.setTextSize(8);
-		paintSmall.setTypeface(typeface);
-		paintSmall.setTextAlign(Align.LEFT);
-		
-        paintMed = new TextPaint();
-		paintMed.setColor(Color.BLACK);
-		paintMed.setTextSize(16);
-		paintMed.setTypeface(typefaceMed);
-		paintMed.setTextAlign(Align.LEFT);
-
+		if(paintSmall == null){
+			paintSmall = new TextPaint();
+			paintSmall.setColor(Color.BLACK);
+			paintSmall.setTextSize(8);
+			paintSmall.setTypeface(typeface);
+			paintSmall.setTextAlign(Align.LEFT);
+		}
+		if(paintMed == null){
+			paintMed = new TextPaint();
+			paintMed.setColor(Color.BLACK);
+			paintMed.setTextSize(16);
+			paintMed.setTypeface(typefaceMed);
+			paintMed.setTextAlign(Align.LEFT);
+		}
 		Bitmap bitmap = Bitmap.createBitmap(48, 32, Bitmap.Config.RGB_565);
 		Canvas canvas = new Canvas(bitmap);
 		canvas.drawColor(Color.WHITE);
@@ -165,11 +167,11 @@ public class MLBScoreWidget extends BroadcastReceiver {
             canvas.drawText("NONE", xAwayScore, yScores, paintMed);
         	break;
         case PREGAME:
-        	drawNames(canvas);
+        	drawNames(canvas, updateScore);
         	String time;
         	try{
         		SimpleDateFormat sdf = new SimpleDateFormat("h:mma");
-        		Date localdate = MLBScoreWidget.score.getLocalStartTime().getTime();
+        		Date localdate = updateScore.getLocalStartTime().getTime();
         		time = sdf.format(localdate);
         	} catch (Exception e) {
         		time = "0:00PM";
@@ -177,18 +179,17 @@ public class MLBScoreWidget extends BroadcastReceiver {
         	canvas.drawText(time, xAwayScore, yScores, paintMed);
         	break;
         case PLAYING:
+           	drawNames(canvas, updateScore);
+        	drawScores(canvas, updateScore);
         	String inning = updateScore.getInning().toString();
-        	canvas.drawText(inning,   xInning, yInning, paintSmall);
+           	canvas.drawText(inning, xInning, yInning, paintSmall);
         	String outs = updateScore.getOuts().toString();
         	float yOuts = (updateScore.getTop() ? yTop : yBottom);
-        	drawNames(canvas);
-        	drawScores(canvas);
-        	canvas.drawText(inning, xInning, yInning, paintSmall);
            	canvas.drawText(outs,   xInning, yOuts,   paintSmall);       		
         	break;
         case FINAL:
-        	drawNames(canvas);
-        	drawScores(canvas);
+        	drawNames(canvas, updateScore);
+        	drawScores(canvas, updateScore);
         	canvas.drawText("F", xInning, yInning, paintSmall);
         	break;
         }

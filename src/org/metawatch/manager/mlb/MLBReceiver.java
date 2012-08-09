@@ -37,9 +37,10 @@ public class MLBReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		Log.d(MLBActivity.TAG,"MLBReceiver");
+		Log.i(MLBActivity.TAG,"MLBReceiver");
 		if (intent.hasExtra("action_mlbupdate")) {
-			MLBActivity.updateMLBScore(context, intent);			
+//			MLBActivity.updateMLBScore(context, intent);			
+			MLBActivity.updateMLBScore();			
 			return;
 		}
 	}
